@@ -1,0 +1,9 @@
+{
+  "name": "Remix: FitSync",
+  "description": "Aplicativo completo de fitness com planos de treino e alimentação personalizados, chat interativo e acompanhamento de progresso.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
