@@ -955,7 +955,7 @@ const PlaylistsView = () => (
           tracks: 45, 
           color: 'from-purple-600 to-pink-600', 
           img: 'https://picsum.photos/seed/funk/400/400',
-          url: 'https://open.spotify.com/playlist/6wwx0B9KmT6fv97pflkQ9m?si=1XdadKNMQamicMLmB3-1JA&pi=f2DItbK0SL-0C'
+          url: 'https://open.spotify.com/playlist/4JJtR5x841nFyieQjo7DXR?si=Ugug5KwUTj-yyc5XGJQMdg&pi=jNIN_ZwTTNmna'
         },
         { 
           name: 'Traps', 
