@@ -958,7 +958,7 @@ const PlaylistsView = () => (
           url: 'https://open.spotify.com/playlist/6wwx0B9KmT6fv97pflkQ9m?si=1XdadKNMQamicMLmB3-1JA&pi=f2DItbK0SL-0C'
         },
         { 
-          name: 'Trap', 
+          name: 'Traps', 
           tracks: 38, 
           color: 'from-slate-800 to-indigo-900', 
           img: 'https://picsum.photos/seed/trap/400/400',
@@ -1029,7 +1029,7 @@ const PlaylistsView = () => (
               </div>
             </div>
             <div className="absolute bottom-6 left-8 right-8">
-              <h4 className="text-3xl font-black text-white tracking-tight mb-1">{p.name}</h4>
+              <h4 className="text-3xl font-black text-white tracking-tight mb-1 notranslate">{p.name}</h4>
               <p className="text-white/80 font-bold uppercase tracking-widest text-xs">{p.tracks} Músicas</p>
             </div>
           </div>
