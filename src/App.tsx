@@ -2304,8 +2304,8 @@ export default function App() {
 
       setUser(updatedUser);
       setShowOnboarding(false);
-      setActiveTab('workout'); // Switch straight to workout mode
-      toast.success("Dados salvos! A IA está gerando seus planos...");
+      setActiveTab('dashboard'); // Stay on dashboard after saving
+      toast.success("Dados salvos! Seus planos estão prontos.");
       
       // Auto-trigger plan generations
       handleShowSheet(updatedUser);
