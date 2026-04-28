@@ -1,15 +1,22 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { User, NutritionPlanSheet } from "../types";
 
 export async function generateNutritionPlan(user: User): Promise<NutritionPlanSheet> {
-  const apiKey = process.env.GEMINI_API_KEY as string;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string;
   
-  if (!apiKey) {
-    console.warn("GEMINI_API_KEY is missing! Using offline fallback nutrition generator.");
+  if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
+    console.warn("GEMINI_API_KEY is missing or not set! Using offline fallback nutrition generator.");
     return generateFallbackNutritionPlan(user);
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+    }
+  });
+
   const prompt = `
     Você é um nutricionista esportivo profissional especializado em hipertrofia, emagrecimento e performance.
     Gere uma planilha alimentar personalizada com base nos dados do usuário abaixo em formato JSON.
@@ -32,61 +39,38 @@ export async function generateNutritionPlan(user: User): Promise<NutritionPlanSh
     5. O campo 'dia' DEVE ser preenchido com o nome por extenso do dia da semana (ex: 'Segunda-feira', etc.). Gere para os 7 dias da semana.
     6. Forneça macros (proteína, carboidrato, gordura) por refeição em gramas ou descrição clara.
 
-    O formato da resposta DEVE ser estritamente JSON.
+    O formato da resposta DEVE ser estritamente JSON seguindo este esquema:
+    {
+      "tipo_dieta": string,
+      "objetivo": string,
+      "dias": [
+        {
+          "dia": string,
+          "refeicoes": [
+            {
+              "horario": string,
+              "nome": string,
+              "descricao": string,
+              "kcal": number,
+              "macros": {
+                "proteina": string,
+                "carboidrato": string,
+                "gordura": string
+              }
+            }
+          ]
+        }
+      ],
+      "observacoes": string
+    }
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            tipo_dieta: { type: Type.STRING },
-            objetivo: { type: Type.STRING },
-            dias: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  dia: { type: Type.STRING },
-                  refeicoes: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        horario: { type: Type.STRING },
-                        nome: { type: Type.STRING },
-                        descricao: { type: Type.STRING },
-                        kcal: { type: Type.NUMBER },
-                        macros: {
-                          type: Type.OBJECT,
-                          properties: {
-                            proteina: { type: Type.STRING },
-                            carboidrato: { type: Type.STRING },
-                            gordura: { type: Type.STRING }
-                          },
-                          required: ["proteina", "carboidrato", "gordura"]
-                        }
-                      },
-                      required: ["horario", "nome", "descricao", "kcal", "macros"]
-                    }
-                  }
-                },
-                required: ["dia", "refeicoes"]
-              }
-            },
-            observacoes: { type: Type.STRING }
-          },
-          required: ["tipo_dieta", "objetivo", "dias", "observacoes"]
-        }
-      }
-    });
-
-    const result = JSON.parse(response.text || '{}');
-    return result as NutritionPlanSheet;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    const nutritionPlan = JSON.parse(text);
+    return nutritionPlan as NutritionPlanSheet;
   } catch (error) {
     console.error("Error generating nutrition plan:", error);
     return generateFallbackNutritionPlan(user);

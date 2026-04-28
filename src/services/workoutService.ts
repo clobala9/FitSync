@@ -1,16 +1,23 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { User, WorkoutPlanSheet } from "../types";
 
 export async function generateWorkoutPlan(user: User): Promise<WorkoutPlanSheet> {
-  const apiKey = process.env.GEMINI_API_KEY as string;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string;
   
   // Se não houver chave de API, vamos usar o gerador offline (Fallback)
-  if (!apiKey) {
-    console.warn("GEMINI_API_KEY is missing! Using offline fallback generator.");
+  if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
+    console.warn("GEMINI_API_KEY is missing or not set! Using offline fallback generator.");
     return generateFallbackPlan(user);
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+    }
+  });
+
   const prompt = `
     Você é um personal trainer profissional especializado em musculação, hipertrofia e emagrecimento.
     Gerar uma ficha de treino de academia personalizada com base nos dados do usuário abaixo em formato JSON.
@@ -41,58 +48,36 @@ export async function generateWorkoutPlan(user: User): Promise<WorkoutPlanSheet>
        - Força: 4–8
     10. O campo 'dia' DEVE ser preenchido com o nome por extenso do dia da semana (ex: 'Segunda-feira', 'Terça-feira', etc.), distribuindo os treinos exatamente nos ${user.trainingDays} dias informados.
 
-    O formato da resposta DEVE ser estritamente JSON.
+    O formato da resposta DEVE ser estritamente JSON seguindo este esquema:
+    {
+      "tipo_treino": string,
+      "objetivo": string,
+      "dias": [
+        {
+          "dia": string,
+          "foco": string,
+          "exercicios": [
+            {
+              "nome": string,
+              "grupo_muscular": string,
+              "series": string,
+              "repeticoes": string,
+              "descanso": string,
+              "tipo": "composto" | "isolado"
+            }
+          ]
+        }
+      ],
+      "observacoes": string
+    }
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            tipo_treino: { type: Type.STRING },
-            objetivo: { type: Type.STRING },
-            dias: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  dia: { type: Type.STRING },
-                  foco: { type: Type.STRING },
-                  exercicios: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        nome: { type: Type.STRING },
-                        grupo_muscular: { type: Type.STRING },
-                        series: { type: Type.STRING },
-                        repeticoes: { type: Type.STRING },
-                        descanso: { type: Type.STRING },
-                        tipo: { 
-                          type: Type.STRING,
-                          enum: ["composto", "isolado"]
-                        }
-                      },
-                      required: ["nome", "grupo_muscular", "series", "repeticoes", "descanso", "tipo"]
-                    }
-                  }
-                },
-                required: ["dia", "foco", "exercicios"]
-              }
-            },
-            observacoes: { type: Type.STRING }
-          },
-          required: ["tipo_treino", "objetivo", "dias", "observacoes"]
-        }
-      }
-    });
-
-    const result = JSON.parse(response.text || '{}');
-    return result as WorkoutPlanSheet;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    const workoutPlan = JSON.parse(text);
+    return workoutPlan as WorkoutPlanSheet;
   } catch (error) {
     console.error("Error generating workout plan:", error);
     // Em caso de erro na IA, retorna o plano offline

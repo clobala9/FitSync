@@ -1,13 +1,15 @@
 import { EvolutionSheet } from '../types';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function generateEvolutionSuggestions(evolution: EvolutionSheet): Promise<string> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string;
-  if (!apiKey) {
+  if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
     console.error("GEMINI_API_KEY is missing!");
     return "Continue focado no seu processo. A constância é a chave para o resultado!";
   }
-  const ai = new GoogleGenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  
   const prompt = `
     Você é um especialista em acompanhamento físico e evolução corporal.
     Sua tarefa é dar uma sugestão motivacional curta e técnica baseada no progresso do usuário abaixo.
@@ -32,11 +34,9 @@ export async function generateEvolutionSuggestions(evolution: EvolutionSheet): P
   `;
 
   try {
-    const result = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: prompt
-    });
-    return (result as any).text || "Continue focado no seu processo. A constância é a chave para o resultado!";
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text() || "Continue focado no seu processo. A constância é a chave para o resultado!";
   } catch (error) {
     console.error("Erro ao gerar sugestões:", error);
     return "Continue focado no seu processo. A constância é a chave para o resultado!";
