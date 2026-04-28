@@ -1,7 +1,6 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
- * Last Sync: 2026-04-27
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -1284,9 +1283,9 @@ const WorkoutPlan = ({ activeObjective, setActiveObjective, activeDay, setActive
   };
 
   const objectives = [
-    { id: 'emagrecimento', label: 'Emagrecimento', icon: Flame },
-    { id: 'definicao', label: 'Definição', icon: Zap },
-    { id: 'hipertrofia', label: 'Hipertrofia', icon: Target }
+    { id: 'emagrecimento', label: 'EMAGRECIMENTO', icon: Flame },
+    { id: 'definicao', label: 'DEFINICAO', icon: Zap },
+    { id: 'hipertrofia', label: 'HIPERTROFIA', icon: Target }
   ];
 
   const days = [
@@ -1505,9 +1504,9 @@ const WorkoutPlan = ({ activeObjective, setActiveObjective, activeDay, setActive
 
 const NutritionPlan = ({ activeObjective, setActiveObjective, activeDay, setActiveDay, onComplete, onShowGuide, hasAiPlan, onToggleAi }: any) => {
   const objectives = [
-    { id: 'emagrecimento', label: 'Emagrecimento', icon: Flame },
-    { id: 'definicao', label: 'Definição', icon: Zap },
-    { id: 'hipertrofia', label: 'Hipertrofia', icon: Target }
+    { id: 'emagrecimento', label: 'EMAGRECIMENTO', icon: Flame },
+    { id: 'definicao', label: 'DEFINICAO', icon: Zap },
+    { id: 'hipertrofia', label: 'HIPERTROFIA', icon: Target }
   ];
 
   const days = [
@@ -1795,9 +1794,32 @@ export default function App() {
         localStorage.setItem('fitsync_user', JSON.stringify(fallbackUser));
         return fallbackUser;
 
-      } catch (err) {
-        console.error('Erro no fetchProfile:', err);
-        return null;
+      } catch (err: any) {
+        console.error('Erro crítico no fetchProfile:', err);
+        
+        // Fallback supremo: se tudo falhar, mas temos o ID e e-mail, deixa o usuário entrar
+        const ultimateFallback: User = {
+          id: userId,
+          name: metadata?.name || email.split('@')[0],
+          email: email,
+          photoUrl: metadata?.photoUrl || metadata?.avatar_url || `https://picsum.photos/seed/${email}/200`,
+          description: 'Focado nos resultados!',
+          weight: 75,
+          height: 175,
+          age: 25,
+          goal: 'hipertrofia',
+          level: 'intermediario',
+          trainingDays: 5,
+          availableTime: 60,
+          injuries: '',
+          onboardingComplete: false,
+          isAtGym: false,
+          completedDays: [],
+          completedNutritionDays: []
+        };
+        
+        toast.error("Erro ao carregar seu perfil da nuvem. Usando modo local temporário.");
+        return ultimateFallback;
       }
     };
 
@@ -2157,58 +2179,42 @@ export default function App() {
       return;
     }
 
-    console.log("Iniciando processo de autenticação para:", authData.email);
-    const loadingToast = toast.loading("Autenticando... Por favor, aguarde.");
+    console.log("Iniciando processo de autenticação para:", authData.email, "Modo:", authMode);
+    const loadingToast = toast.loading(authMode === 'login' ? "Entrando..." : "Criando conta...");
 
     try {
-      // Timeout de 15 segundos para evitar travamento infinito
+      // Timeout de 30 segundos para dar tempo ao servidor Supabase
       const authPromise = (async () => {
-        // Se estiver no modo login, tenta login primeiro. Se estiver no signup, tenta signup primeiro.
-        // Isso é mais eficiente do que tentar sempre os dois em sequência.
-        
         if (authMode === 'login') {
-          console.log("Tentando login direto...");
+          console.log("Executando signInWithPassword...");
           const { data, error } = await supabase.auth.signInWithPassword({
-            email: authData.email,
+            email: authData.email.trim(),
             password: authData.password,
           });
           
-          if (!error) return { type: 'login', data };
-          
-          // Se o erro não for de credenciais (ex: rede), joga o erro
-          if (!error.message.toLowerCase().includes("invalid") && !error.message.toLowerCase().includes("not found")) {
-            throw error;
-          }
-          
-          console.log("Usuário não encontrado ou senha errada no login. Tentando cadastro...");
-        }
-
-        // Tenta cadastrar (ou é o primeiro passo do signup, ou o fallback do login)
-        console.log("Tentando cadastro (signUp)...");
-        const { data, error } = await supabase.auth.signUp({
-          email: authData.email,
-          password: authData.password,
-          options: {
-            data: {
-              name: authData.name || authData.email.split('@')[0],
-              photoUrl: `https://picsum.photos/seed/${authData.email}/200`,
+          if (error) throw error;
+          return { type: 'login', data };
+        } else {
+          console.log("Executando signUp...");
+          const { data, error } = await supabase.auth.signUp({
+            email: authData.email.trim(),
+            password: authData.password,
+            options: {
+              data: {
+                name: authData.name || authData.email.split('@')[0],
+                photoUrl: `https://picsum.photos/seed/${authData.email}/200`,
+              },
+              emailRedirectTo: window.location.origin
             }
-          }
-        });
+          });
 
-        if (error) {
-          if (error.message.includes("already registered")) {
-            // Se já existe e falhou o login antes, é porque a senha está errada
-            throw new Error("Este e-mail já possui conta, mas a senha está incorreta.");
-          }
-          throw error;
+          if (error) throw error;
+          return { type: 'signup', data };
         }
-
-        return { type: 'signup', data };
       })();
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("O servidor demorou muito para responder. Verifique sua conexão.")), 15000)
+        setTimeout(() => reject(new Error("O servidor demorou muito para responder. Verifique sua conexão ou se o e-mail é válido.")), 30000)
       );
 
       const result: any = await Promise.race([authPromise, timeoutPromise]);
@@ -2218,7 +2224,9 @@ export default function App() {
         toast.success("Bem-vindo de volta!");
       } else {
         if (result.data.user && !result.data.session) {
-          toast.success("E-mail enviado! Confirme seu e-mail para entrar.");
+          toast.info("E-mail de confirmação enviado! Por favor, verifique sua caixa de entrada (e o spam) para ativar sua conta.", {
+            duration: 10000
+          });
         } else {
           toast.success("Conta criada com sucesso!");
         }
@@ -2226,7 +2234,17 @@ export default function App() {
 
     } catch (error: any) {
       console.error("Erro detalhado na autenticação:", error);
-      toast.error(error.message || "Erro na autenticação. Tente novamente.");
+      let userMessage = error.message;
+      
+      if (error.message.includes("Invalid login credentials")) {
+        userMessage = "E-mail ou senha incorretos.";
+      } else if (error.message.includes("User already registered")) {
+        userMessage = "Este e-mail já está cadastrado. Tente fazer login.";
+      } else if (error.message.includes("network")) {
+        userMessage = "Erro de conexão. Verifique sua internet.";
+      }
+      
+      toast.error(userMessage || "Erro na autenticação. Tente novamente.");
     } finally {
       toast.dismiss(loadingToast);
     }
@@ -2635,3 +2653,4 @@ export default function App() {
     </div>
   );
 }
+
