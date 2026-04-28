@@ -681,7 +681,7 @@ const Badge = ({ children, variant = 'brand', className = '' }: any) => {
 
 // --- Views ---
 
-const AuthView = ({ authMode, setAuthMode, authData, setAuthData, handleAuthSubmit, handleSocialLogin, handleGuestLogin }: any) => {
+const AuthView = ({ authMode, setAuthMode, authData, setAuthData, handleAuthSubmit, handleSocialLogin }: any) => {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -860,15 +860,7 @@ const AuthView = ({ authMode, setAuthMode, authData, setAuthData, handleAuthSubm
               </button>
             </p>
 
-            <div className="h-px bg-white/5 w-full" />
 
-            <button 
-              onClick={handleGuestLogin}
-              className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-brand-500 transition-colors flex items-center gap-2"
-            >
-              <UserIcon className="w-3 h-3" />
-              Entrar como Convidado (Modo Preview)
-            </button>
           </motion.div>
         </div>
       </div>
@@ -2356,31 +2348,7 @@ export default function App() {
 
 
 
-  const handleGuestLogin = () => {
-    const guestUser: User = {
-      id: 'guest',
-      name: 'Convidado',
-      email: 'guest@example.com',
-      photoUrl: `https://picsum.photos/seed/guest/200`,
-      description: 'Explorando o app!',
-      weight: 70,
-      height: 175,
-      age: 25,
-      goal: 'hipertrofia',
-      level: 'iniciante',
-      trainingDays: 3,
-      availableTime: 45,
-      injuries: '',
-      onboardingComplete: true,
-      isAtGym: false,
-      completedDays: [],
-      completedNutritionDays: []
-    };
-    setUser(guestUser);
-    localStorage.setItem('fitsync_user', JSON.stringify(guestUser));
-    setActiveTab('dashboard');
-    toast.success("Bem-vindo como convidado!");
-  };
+
 
   const handleUpdateEvolution = async (data: EvolutionSheet) => {
     setEvolutionSheet(data);
@@ -2406,7 +2374,6 @@ export default function App() {
       setAuthData={setAuthData} 
       handleAuthSubmit={handleAuthSubmit} 
       handleSocialLogin={handleSocialLogin}
-      handleGuestLogin={handleGuestLogin}
     />
   );
 
