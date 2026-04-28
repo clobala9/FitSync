@@ -2294,7 +2294,6 @@ export default function App() {
             onboarding_complete: true,
             workout_sheet: workoutSheet,
             nutrition_sheet: nutritionSheet,
-            evolution_sheet: evolutionSheet,
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id);
