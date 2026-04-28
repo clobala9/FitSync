@@ -2,7 +2,7 @@ import { EvolutionSheet } from '../types';
 import { GoogleGenAI } from "@google/genai";
 
 export async function generateEvolutionSuggestions(evolution: EvolutionSheet): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY as string;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string;
   if (!apiKey) {
     console.error("GEMINI_API_KEY is missing!");
     return "Continue focado no seu processo. A constância é a chave para o resultado!";
