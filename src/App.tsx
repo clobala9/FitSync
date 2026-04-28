@@ -2020,7 +2020,7 @@ export default function App() {
       }
 
       setShowAiPlan(true);
-      setActiveTab('workout'); // Go to workout tab to show the new sheet
+      // setActiveTab('workout'); // REMOVED: Stay on current tab
       toast.dismiss(loadingToast);
       toast.success("Treino planejado com sucesso!", {
         style: {
@@ -2088,7 +2088,7 @@ export default function App() {
       }
 
       setShowAiNutritionPlan(true);
-      setActiveTab('nutrition');
+      // setActiveTab('nutrition'); // REMOVED: Stay on current tab
       toast.dismiss(loadingToast);
       toast.success("Plano alimentar gerado com sucesso!");
     } catch (error) {
