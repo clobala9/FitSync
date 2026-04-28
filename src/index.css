@@ -55,6 +55,10 @@
   .input-field {
     @apply w-full p-5 rounded-2xl border border-white/5 bg-white/5 focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all duration-300 font-semibold text-[#FFFAFA] placeholder:text-slate-500 backdrop-blur-md;
   }
+
+  select.input-field option {
+    @apply bg-slate-950 text-white;
+  }
 }
 
 .bg-grid {
